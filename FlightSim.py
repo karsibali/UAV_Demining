@@ -36,21 +36,32 @@ mine_db = np.loadtxt('mine_database.txt', dtype=int, delimiter=', ')
 
 # % FOV = 20 x 10 deg with 1.5 mrad
 # %     = (20 x 0.0175) x (10 x 0.0175) rad
-# % FOV_M = FOV x H
+# % FOV at altitude H in meters
+# % FOV_M = FOV x H (approximately)
 
-FOV = np.zeros([fld_size, fld_size], dtype=int)
 measurements = {}
 for idx in range(50):
     fov_h = fov[0] * 0.0175 * alts[idx]
-    fov_v = fov[1] * 0.0175 * alts[idx]
+#   Vertical FOV is not required here.
+#    fov_v = fov[1] * 0.0175 * alts[idx]
     bins_x = fov_h / (bin_size * np.sqrt(2))  # number of bins covered diagonally
     bins_x = int(np.ceil(bins_x/2))
+    # Get the objects within the FOV at current altitude through the diagonal path
+    FOV = np.zeros([fld_size, fld_size], dtype=int)
     FOV += np.diag(np.diag(mine_field))
     for dx in range(1, bins_x):
         FOV += np.diag(np.diag(mine_field, dx), dx)
         FOV += np.diag(np.diag(mine_field, -dx), -dx)
-    R = FOV[FOV != 0]  # Non-empty bins
-    objs = mine_db[R,:]
-    measurements[idx] = SensorMeasurement(alts[idx], objs)
+    # Get the positions and objects into new arrays
+    nemnfld_idx = FOV.nonzero()  # The indexes of non-empty bins (objects) in the FOV
+    nemnfld = FOV[nemnfld_idx]   # Non-empty bins (The indexes to the mine database)
+    # Get the real object parameters from the database using the indexes
+    objs = mine_db[nemnfld-1, :]
+    # Simulate the sensor measurements for these objects
+    # deteriorate the parameters of the objects
+    smzi = sensormeasurement(alts[idx], objs)
+    # Add all
+    measurements[idx] = np.column_stack((np.array(nemnfld_idx).T, objs, smzi))
+
 
 sio.savemat('measurements', measurements)
