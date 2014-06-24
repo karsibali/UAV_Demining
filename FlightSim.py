@@ -32,14 +32,15 @@ mine_field = createminefield(fld_size)
 
 # Load the mine database into a matrix
 # The columns are: Type, size, depth, shape, metal content
-mine_db = np.loadtxt('mine_database.txt', dtype=int, delimiter=', ')
+mine_db = np.loadtxt('mine_database.txt', dtype=int, delimiter=' ')
 
 # % FOV = 20 x 10 deg with 1.5 mrad
 # %     = (20 x 0.0175) x (10 x 0.0175) rad
 # % FOV at altitude H in meters
 # % FOV_M = FOV x H (approximately)
-
-measurements = {}
+indexes = []
+objects = []
+measurements = []
 for idx in range(50):
     fov_h = fov[0] * 0.0175 * alts[idx]
 #   Vertical FOV is not required here.
@@ -53,15 +54,24 @@ for idx in range(50):
         FOV += np.diag(np.diag(mine_field, dx), dx)
         FOV += np.diag(np.diag(mine_field, -dx), -dx)
     # Get the positions and objects into new arrays
-    nemnfld_idx = FOV.nonzero()  # The indexes of non-empty bins (objects) in the FOV
-    nemnfld = FOV[nemnfld_idx]   # Non-empty bins (The indexes to the mine database)
+    nemnfld_idx = FOV.flatten().nonzero()[0]  # The indexes of non-empty bins (objects) in the FOV
+    nemnfld = FOV.flatten()[nemnfld_idx]   # Non-empty bins (The indexes to the mine database)
     # Get the real object parameters from the database using the indexes
     objs = mine_db[nemnfld-1, :]
+
     # Simulate the sensor measurements for these objects
-    # deteriorate the parameters of the objects
-    smzi = sensormeasurement(alts[idx], objs)
-    # Add all
-    measurements[idx] = np.column_stack((np.array(nemnfld_idx).T, objs, smzi))
+    # (deteriorate the parameters of the objects)
+    # Simulate 10 flights for each altitude and average the results of these 10 flights
+    shp_mi = np.zeros([10, nemnfld.size], dtype=int)
+    sz_mi = np.zeros([10, nemnfld.size])
+    for midx in range(10):
+        sz_mi[midx], shp_mi[midx] = sensormeasurement(alts[idx], objs)
+    shp_mi = np.mean(shp_mi, axis=0, dtype=int).T
+    sz_mi = np.mean(sz_mi, axis=0).T
 
+    indexes.append(nemnfld_idx)
+    objects.append(objs)
+    measurements.append((shp_mi, sz_mi))
 
-sio.savemat('measurements', measurements)
+sio.savemat('measurements', {'idxs':np.asarray(indexes), 'objs': np.asarray(objects),
+                             'sen_meas':np.asarray(measurements)})
