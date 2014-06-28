@@ -49,45 +49,49 @@ high_metal = np.random.randint(201, 500, size=1687)
 metal_content = np.concatenate((no_metal, low_metal, high_metal))
 
 ## Create an empty array for objects
+## First column is the type of the object.
 mines = np.empty([NUM_OBJS, FEATURES], dtype=int)
 mines[:APM_num, 0] = APM
 mines[APM_num:APM_num + ATM_num, 0] = ATM
 mines[APM_num + ATM_num:APM_num + ATM_num + UXO_num, 0] = UXO
 mines[-CLUT_num:, 0] = CLUT
 
-APM_size_idxs = np.arange(NUM_OBJS)
-# APMs are either small or medium. Shuffle the small and medium sizes and
-# assign these sizes to the APMs.
-np.random.shuffle(APM_size_idxs[:3102+2510])
-mines[:APM_num, 1] = sizes[APM_size_idxs[:APM_num]]
-
-ATM_size_idxs = APM_size_idxs[APM_num:] # Get the remaining sizes after assigning to APMs
-ATM_size_idxs = ATM_size_idxs[ATM_size_idxs >= 3102] # Find the ones that are not small
-np.random.shuffle(ATM_size_idxs) #Shuffle the indexes and assign the first ATM_num to the objects
-mines[APM_num:APM_num + ATM_num, 1] = sizes[ATM_size_idxs[:ATM_num]]
-
-rem_idxs = APM_size_idxs[APM_num:] # The remaining sizes will be assigned  to the remaining objects (UXO and CLUT)
-rem_idxs = np.concatenate((rem_idxs[rem_idxs<3102], ATM_size_idxs[ATM_num:]))
-np.random.shuffle(rem_idxs)
-mines[APM_num + ATM_num:, 1] = sizes[rem_idxs]
-
+## Second column is the depth
 ## Dept values are assigned to the objects the same way as in sizes.
 APM_depth_idxs = np.arange(8000)
 np.random.shuffle(APM_depth_idxs[:3136+2981]) # APMs are either surface or shallow.
-mines[:APM_num, 2] = depths[APM_depth_idxs[:APM_num]]
+mines[:APM_num, 1] = depths[APM_depth_idxs[:APM_num]]
 
 ATM_depth_idxs = APM_depth_idxs[APM_num:] # Get the remaining depth indexes
 ATM_depth_idxs = ATM_depth_idxs[ATM_depth_idxs >= (3136)] # Find the shallow, burried and deep-burried from remaining
 np.random.shuffle(ATM_depth_idxs)
-mines[APM_num:APM_num+ATM_num, 2] = depths[ATM_depth_idxs[:ATM_num]]
+mines[APM_num:APM_num+ATM_num, 1] = depths[ATM_depth_idxs[:ATM_num]]
 
 rem_idxs = APM_depth_idxs[APM_num:]
 UXO_depth_idxs = np.concatenate((rem_idxs[rem_idxs<(3136)], ATM_depth_idxs[ATM_num:]))
 np.random.shuffle(UXO_depth_idxs)
-mines[APM_num+ATM_num:APM_num+ATM_num+UXO_num, 2] = depths[UXO_depth_idxs[:UXO_num]]
+mines[APM_num+ATM_num:APM_num+ATM_num+UXO_num, 1] = depths[UXO_depth_idxs[:UXO_num]]
 
-mines[-CLUT_num:, 2] = depths[UXO_depth_idxs[UXO_num:]]
+mines[-CLUT_num:, 1] = depths[UXO_depth_idxs[UXO_num:]]
 
+## Third column is size
+APM_size_idxs = np.arange(NUM_OBJS)
+# APMs are either small or medium. Shuffle the small and medium sizes and
+# assign these sizes to the APMs.
+np.random.shuffle(APM_size_idxs[:3102+2510])
+mines[:APM_num, 2] = sizes[APM_size_idxs[:APM_num]]
+
+ATM_size_idxs = APM_size_idxs[APM_num:] # Get the remaining sizes after assigning to APMs
+ATM_size_idxs = ATM_size_idxs[ATM_size_idxs >= 3102] # Find the ones that are not small
+np.random.shuffle(ATM_size_idxs) #Shuffle the indexes and assign the first ATM_num to the objects
+mines[APM_num:APM_num + ATM_num, 2] = sizes[ATM_size_idxs[:ATM_num]]
+
+rem_idxs = APM_size_idxs[APM_num:] # The remaining sizes will be assigned  to the remaining objects (UXO and CLUT)
+rem_idxs = np.concatenate((rem_idxs[rem_idxs<3102], ATM_size_idxs[ATM_num:]))
+np.random.shuffle(rem_idxs)
+mines[APM_num + ATM_num:, 2] = sizes[rem_idxs]
+
+## Fourth column is shape
 shape_idxs = np.arange(8000)
 np.random.shuffle(shape_idxs[:3676+688+1320]) # APMs are cylinder, box or sphere
 mines[:APM_num, 3] = shapes[shape_idxs[:APM_num]]
@@ -100,6 +104,7 @@ mines[APM_num:, 3] = shapes[shape_idxs]
 metal_idxs = np.arange(8000)
 np.random.shuffle(metal_idxs)
 
+## Fifth column is metal content.
 mines[:, 4] = metal_content[metal_idxs]
 
 np.savetxt('mine_database.txt', mines, fmt='%i', delimiter=' ')

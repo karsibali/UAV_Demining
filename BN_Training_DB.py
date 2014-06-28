@@ -1,79 +1,94 @@
 __author__ = 'sarslan'
-
 import numpy as np
+import scipy.io as sio
 
-def environment(sze):
-    """
-        Create a simulated environment to match the simulated minefield.
-        The environment data includes:
-                sr : soil moisture (%)- dry [0, 10], wet (10, 40], saturated (>40)
-                sc : soil composition - very sandy, sandy, high-clay, clay, silt
-                su : soil uniformity  - no, yes (uniform)
-                sg : magnetic soil    - no, yes (magnetic)
-                vg : vegetation       - no-vegetation, sparse, dense
-                wt : weather          - clear, overcast, raining
-                il : illumination     - low, medium, high
-    :param size: One side of the square shaped minefield area
-    :return: a 3d array that includes the environment data over minefield
-    """
-    sr = 0; sc = 1; su = 2; sg = 3; vg = 4; wt = 5; il = 6
+import sensor_measurement
+import Environment_DB
+# from FlightSim import createminefield
 
-    # Moisture (%) categories:
-    sr_dry = 0; sr_wet = 1; sr_saturated = 2
 
-    # Compositon categories:
-    sc_vs = 0; sc_s = 1; sc_hc = 2; sc_c = 3; sc_s = 4
+def contrast(e):
+    env = np.empty(e.shape[0], dtype=int)
+    env.fill(-1)
+    # If the weather is not clear the contrast is poor
+    env[e[:, 5] > 0] = 0
+    # If the soil moisture is saturated (>40%) --> poor
+    env[e[:, 0] == 2] = 0
+    # moisture    vegetation  weather    illumination
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 0, e[:, 5] == 0)), axis=1)]] = 3
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 1, e[:, 5] == 0, e[:, 6] == 0)), axis=1)]] = 2
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 1, e[:, 5] == 0, e[:, 6] == 1)), axis=1)]] = 2
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 1, e[:, 5] == 0, e[:, 6] == 2)), axis=1)]] = 3
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 2, e[:, 5] == 0, e[:, 6] == 0)), axis=1)]] = 2
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 2, e[:, 5] == 0, e[:, 6] == 1)), axis=1)]] = 2
+    env[e[np.all(np.column_stack((e[:, 0] == 0, e[:, 4] == 2, e[:, 5] == 0, e[:, 6] == 2)), axis=1)]] = 3
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 0, e[:, 5] == 0, e[:, 6] == 0)), axis=1)]] = 2
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 0, e[:, 5] == 0, e[:, 6] == 1)), axis=1)]] = 3
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 0, e[:, 5] == 0, e[:, 6] == 2)), axis=1)]] = 3
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 1, e[:, 5] == 0, e[:, 6] == 0)), axis=1)]] = 1
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 1, e[:, 5] == 0, e[:, 6] == 1)), axis=1)]] = 1
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 1, e[:, 5] == 0, e[:, 6] == 2)), axis=1)]] = 3
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 2, e[:, 5] == 0, e[:, 6] == 0)), axis=1)]] = 1
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 2, e[:, 5] == 0, e[:, 6] == 1)), axis=1)]] = 1
+    env[e[np.all(np.column_stack((e[:, 0] == 1, e[:, 4] == 2, e[:, 5] == 0, e[:, 6] == 2)), axis=1)]] = 1
 
-    # Vegetation categories:
-    vg_no = 0; vg_sp = 1; vg_dn = 2
-
-    # Weather categories:
-    wt_cl = 0; wt_oc = 1; wt_rn = 2
-
-    # Illumination categories:
-    il_lo = 0; il_me = 1; il_hi = 2
-
-    sz = sze ** 2; # Number of cells in a square shaped area
-
-    # moisture_0 = np.zeros(2339, dtype=int)
-    # moisture_1 = np.ones(4555, dtype=int)  # dry
-    # moisture_2 = np.empty(1606, dytpe=int) # wet
-    # moisture_2.fill(sr_saturated)          # saturated
-    # moisture = np.concatenate((moisture_0, moisture_1, moisture_2))
-    moisture = np.random.randint(3, size=sz)
-
-    # comp_0 = np.zeros(1743, dtype=int) # very sandy
-    # comp_1 = np.ones(1724, dtype=int)  # sandy
-    # comp_2 = np.emtpy(1688, dtype=int) # high-clay
-    # comp_2.fill(sc_hc)
-    # comp_3 = np.empty(1647, dtype=int) # clay
-    # comp_3.fill(sc_c)
-    # comp_4 = np.empty(1698, dtype=int) # silt
-    # comp_4 = np.fill(sc_s)
-    # composition = np.concatenate((comp_0, comp_1, comp_2, comp_3, comp_4))
-    composition = np.random.randint(4, size=sz)
-
-    # mag_0 = np.zeros(6529, dtype=int) # no
-    # mag_1 = np.ones(1971, dtype=int)  # yes (magnetic)
-    # magnetic = np.concatenate((mag_0, mag_1))
-    magnetic = np.random.randint(2, size=sz)
-
-    # veg_0 = np.zeros(2796, dtype=int)  # no vegetation
-    # veg_1 = np.ones(2756, dtype=int)   # sparse
-    # veg_2 = np.ones(2948, dtype=int)   # dense
-    # vegetation = np.concatenate((veg_0, veg_1, veg_2))
-    vegetation = np.random.randint(3, size=sz)
-
-    uniformity = np.random.randint(2, size=sz)
-
-    weather = np.random.randint(3, size=sz)
-
-    illumination = np.random.randint(3, size=sz)
-
-    env = np.concatenate((moisture, composition, uniformity, magnetic, vegetation, weather, illumination))
-    np.random.shuffle(env)
-    return env.reshape((sze, sze, 7))
+    return env
 
 
 if __name__ == '__main__':
-    
+    # Load the mine database into a matrix
+    # The columns are: Type, size, depth, shape, metal content
+    mine_db = np.loadtxt('mine_database.txt', dtype=int, delimiter=' ')
+
+    num_cases = 16000
+
+    # 1. Create samples from mine database
+    # 10000 samples from mines and 6000 samples from clutter
+    mines = np.random.randint(0, 5000, size=10000)
+    clutter = np.random.randint(5000, 8000, size=6000)
+    objs = np.concatenate((mines, clutter))
+    np.random.shuffle(objs)
+    objs = mine_db[objs]
+
+    # 2. Randomly assign environment variables to the samples
+    env = Environment_DB.environment(num_cases)
+
+    # 3. Create contrast information for each environment sample
+    cont = contrast(env)
+
+    # 4. Create altitudes for each sample. Randomly select from 50 different altitudes
+    alts = np.arange(start=500, stop=3000, step=50)
+    # Altitude indexes are sensor mode values at the same time.
+    alt_idx = np.random.randint(0, alts.size, size=num_cases)
+    altitudes = alts[alt_idx]
+
+    # 5. Simulate measurements based on contrast values and altitudes
+    sz_m, shp_m = sensor_measurement.sensormeasurement(altitudes, objs, cont)
+
+    # Convert object features to category indexes
+    # We need to do this since the nodes in the BN are all discrete.
+    # We need to discretize size and dept variables
+    objs[objs[:, 0] > 2, 0] = 0  # Mark clutter as not mine
+    objs[objs[:, 0] <= 2, 0] = 1  # Mark all type of mines as mine
+    # Convert sizes
+    objs[objs[:, 1] <= 13, 1] = 0  # Small
+    objs[np.logical_and(objs[:, 1] > 13, objs[:, 1] <= 24), 1] = 1  # Medium
+    objs[np.logical_and(objs[:, 1] > 24, objs[:, 1] <= 40), 1] = 2  # Large
+    objs[objs[:, 1] > 40, 1] = 3  # Extra-large
+    # Convert depths
+    objs[objs[:, 2] == 0, 2] = 0  # Surface
+    objs[np.logical_and(objs[:, 2] > 0, objs[:, 2] <= 12), 2] = 1  # Shallow-burried
+    objs[np.logical_and(objs[:, 2] > 12, objs[:, 2] <= 60), 2] = 2  # Burried
+    objs[objs[:, 2] > 60, 2] = 0  # Deep-burried
+    # We don't need to convert shapes, since they are already discrete variables
+    # We don't need the metal content feature since it is not in BN
+    # So, we get rid of metal content feature (last column)
+    objs = objs[:, :-1]  # Get rid of the last column
+
+    # Now combine all the feature vectors into one big array.
+    # The order of the features must be:
+    #       type, depth, size, shape, sensor mode, weather, vegetation, illumination, moisture, size_m, and shape_m
+    training_db = np.column_stack((objs, alt_idx, env[:, 5], env[:, 4], env[:, 6], env[:, 0], sz_m, shp_m))
+
+    sio.savemat('BN_training_db', {'samples': training_db})
+

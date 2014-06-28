@@ -27,6 +27,7 @@ alts = np.arange(start=500, stop=3000, step=50)
 fov = [20, 10]
 fld_size = 400
 bin_size = 2.5  # size of one bin in meters
+contrast = 1 # low contrast
 
 mine_field = createminefield(fld_size)
 
@@ -40,7 +41,8 @@ mine_db = np.loadtxt('mine_database.txt', dtype=int, delimiter=' ')
 # % FOV_M = FOV x H (approximately)
 indexes = []
 objects = []
-measurements = []
+shape_m = []
+size_m = []
 for idx in range(50):
     fov_h = fov[0] * 0.0175 * alts[idx]
 #   Vertical FOV is not required here.
@@ -65,13 +67,16 @@ for idx in range(50):
     shp_mi = np.zeros([10, nemnfld.size], dtype=int)
     sz_mi = np.zeros([10, nemnfld.size])
     for midx in range(10):
-        sz_mi[midx], shp_mi[midx] = sensormeasurement(alts[idx], objs)
+        sz_mi[midx], shp_mi[midx] = sensormeasurement(alts[idx], objs, contrast)
     shp_mi = np.mean(shp_mi, axis=0, dtype=int).T
     sz_mi = np.mean(sz_mi, axis=0).T
 
     indexes.append(nemnfld_idx)
     objects.append(objs)
-    measurements.append((shp_mi, sz_mi))
+    shape_m.append(shp_mi)
+    size_m.append(sz_mi)
 
-sio.savemat('measurements', {'idxs':np.asarray(indexes), 'objs': np.asarray(objects),
-                             'sen_meas':np.asarray(measurements)})
+sio.savemat('measurements', {'mine_db': mine_db,
+                             'idxs': np.asarray(indexes),
+                             'size_meas': np.asarray(size_m),
+                             'shape_meas': np.asarray(shape_m)})
