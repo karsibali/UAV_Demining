@@ -40,11 +40,13 @@ def sensormeasurement(H, objs, cont):
     sigma = np.zeros(num_objs)
     contrast = cont[objects_idx]
 
+    # Classify objects according to their sizes
     idxs_0 = objects[:, 2] >= 8 * sres
     idxs_1 = np.logical_and(8 * sres > objects[:, 2], objects[:, 2] >= 5 * sres)
     idxs_2 = np.logical_and(5 * sres > objects[:, 2], objects[:, 2] >= 3 * sres)
     idxs_3 = objects[:, 2] < 3 * sres
 
+    # Assign the shape error, Beta and sigma coefficients from the table according to the contras value
     shp_err[idxs_0] = shp_err_tbl[0, contrast[idxs_0]]
     shp_err[idxs_1] = shp_err_tbl[1, contrast[idxs_1]]
     shp_err[idxs_2] = shp_err_tbl[2, contrast[idxs_2]]
@@ -60,8 +62,10 @@ def sensormeasurement(H, objs, cont):
     sigma[idxs_2] = sigma_tbl[2, contrast[idxs_2]]
     sigma[idxs_3] = sigma_tbl[3, contrast[idxs_3]]
 
+    # Simulated size measurement values
     meas_size = objects[:, 2] + 0.1 * (B + sigma * np.random.random())
 
+    # Simulated shape measurement values
     luck_factor = np.random.random(num_objs)
     meas_shape = np.zeros(num_objs, dtype=int)
     diff = shp_err - luck_factor
@@ -79,7 +83,7 @@ def sensormeasurement(H, objs, cont):
     ret_size = np.zeros(objs.shape[0])
     ret_size[objects_idx] = meas_size
     ret_size[non_detectable_idx] = 0
-    ret_shape = np.zeros(objs.shape[0])
+    ret_shape = np.zeros(objs.shape[0], dtype=int)
     ret_shape[objects_idx] = meas_shape
     ret_shape[non_detectable_idx] = 0
     return ret_size, ret_shape
