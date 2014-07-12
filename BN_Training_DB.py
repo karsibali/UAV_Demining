@@ -65,7 +65,8 @@ if __name__ == '__main__':
     # 5. Simulate measurements based on contrast values and altitudes
     sz_m, shp_m = sensor_measurement.sensormeasurement(altitudes, objs, cont)
     # Now classify measured sizes
-    detected_idx = sz_m != 0
+    non_detected_idx = sz_m == 0
+    sz_m[non_detected_idx] = -1
 
     small_idx = np.logical_and(sz_m > 0, sz_m <= 13)
     medium_idx = np.logical_and(sz_m > 13, sz_m <= 24)
@@ -86,12 +87,12 @@ if __name__ == '__main__':
     # Convert depths
     surface_idx = objs[:, 1] == 0
     shallow_idx = np.logical_and(objs[:, 1] > 0, objs[:, 1] <= 12)
-    burried_idx = np.logical_and(objs[:, 1] > 12, objs[:, 1] <= 60)
+    buried_idx = np.logical_and(objs[:, 1] > 12, objs[:, 1] <= 60)
     deep_idx = objs[:, 1] > 60
     objs[surface_idx, 1] = 0  # Surface
-    objs[shallow_idx, 1] = 1  # Shallow-burried
-    objs[burried_idx, 1] = 2  # Burried
-    objs[deep_idx, 1] = 3  # Deep-burried
+    objs[shallow_idx, 1] = 1  # Shallow-buried
+    objs[buried_idx, 1] = 2  # Buried
+    objs[deep_idx, 1] = 3  # Deep-buried
     # Convert sizes
     small_idx = objs[:, 2] <= 13
     medium_idx = np.logical_and(objs[:, 2] > 13, objs[:, 2] <= 24)
@@ -112,4 +113,4 @@ if __name__ == '__main__':
     training_db = np.column_stack((objs, alt_idx, env[:, 5], env[:, 4], env[:, 6], env[:, 0], shp_m, sz_m))
 
     #sio.savemat('BN_training_db', {'samples': training_db[detected_idx]})
-    np.savetxt('BN_training_db.txt', training_db[detected_idx], fmt='%i', delimiter=' ')
+    np.savetxt('BN_training_db.txt', training_db, fmt='%2i', delimiter=' ')
