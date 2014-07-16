@@ -67,6 +67,7 @@ if __name__ == '__main__':
     # Now classify measured sizes
     non_detected_idx = sz_m == 0
     sz_m[non_detected_idx] = -1
+    objs[non_detected_idx] = 0  # Mark the objects that cannot be detected as not-mine (0)
 
     small_idx = np.logical_and(sz_m > 0, sz_m <= 13)
     medium_idx = np.logical_and(sz_m > 13, sz_m <= 24)

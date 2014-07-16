@@ -1,7 +1,8 @@
 % Create the IR sensor BN and learn the parameters (CPTs) from sample data
 clc;clear;
-addpath(genpath('~/MATLAB/bnt')) % Add BNT to the path
-
+if(isempty(strfind(path, '/MATLAB/bnt')))
+    addpath(genpath('~/MATLAB/bnt')) % Add BNT to the path
+end
 %% Create the BN structure
 N = 11; % Number of variables
 
@@ -39,24 +40,24 @@ bnet = mk_bnet(DAG, node_sizes);
 %draw_graph(G);
 
 % Define the CPDs
-bnet.CPD{yi} = tabular_CPD(bnet, yi, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{di} = tabular_CPD(bnet, di, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{zi} = tabular_CPD(bnet, zi, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{si} = tabular_CPD(bnet, si, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{Vir} = tabular_CPD(bnet, Vir, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{w} = tabular_CPD(bnet, w, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{g} = tabular_CPD(bnet, g, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{i} = tabular_CPD(bnet, i, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{sr} = tabular_CPD(bnet, sr, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{zmi} = tabular_CPD(bnet, zmi, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
-bnet.CPD{smi} = tabular_CPD(bnet, smi, 'prior_type', 'dirichlet', 'dirichlet_weight', 0);
+bnet.CPD{yi} = tabular_CPD(bnet, yi);
+bnet.CPD{di} = tabular_CPD(bnet, di);
+bnet.CPD{zi} = tabular_CPD(bnet, zi);
+bnet.CPD{si} = tabular_CPD(bnet, si);
+bnet.CPD{Vir} = tabular_CPD(bnet, Vir);
+bnet.CPD{w} = tabular_CPD(bnet, w);
+bnet.CPD{g} = tabular_CPD(bnet, g);
+bnet.CPD{i} = tabular_CPD(bnet, i);
+bnet.CPD{sr} = tabular_CPD(bnet, sr);
+bnet.CPD{zmi} = tabular_CPD(bnet, zmi);
+bnet.CPD{smi} = tabular_CPD(bnet, smi);
 
-CPT = cell(1,N);
-for i=1:N
-  s=struct(bnet.CPD{i});  % violate object privacy
-  CPT{i}=s.CPT;
-  dispcpt(CPT{i})
-end
+% CPT = cell(1,N);
+% for i=1:N
+%   s=struct(bnet.CPD{i});  % violate object privacy
+%   CPT{i}=s.CPT;
+%   dispcpt(CPT{i})
+% end
 
 %% Load the training database
 samples = load('BN_training_db.txt');
@@ -81,7 +82,7 @@ CPT3 = cell(1,N);
 for i=1:N
   s=struct(bnet2.CPD{i});  % violate object privacy
   CPT3{i}=s.CPT;
-  dispcpt(CPT{i})
+  dispcpt(CPT3{i})
 end
 
 %%
