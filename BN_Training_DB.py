@@ -34,7 +34,6 @@ def contrast(e):
 
     return env
 
-
 if __name__ == '__main__':
     # Load the mine database into a matrix
     # The columns are: Type, depth, size, shape, metal content
